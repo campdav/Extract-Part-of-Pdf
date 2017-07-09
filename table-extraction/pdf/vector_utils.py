@@ -6,7 +6,7 @@ Created on Oct 21, 2015
 
 '''
 from collections import namedtuple
-from itertools import izip
+#from itertools import izip
 import numpy as np
 
 # bbox indices
@@ -26,7 +26,7 @@ class Segment(namedtuple('Segment', ['e','vector'])):
         return bool(self.vector[y0])
     def __str__(self, *args, **kwargs):
         return ' '.join(str(x) for x in [self.e, self.vector, self.e.linewidth])
-        
+
 def vectorize(e, tolerance = 0.1):
     '''
     vectorizes the pdf object's bounding box
@@ -37,18 +37,18 @@ def vectorize(e, tolerance = 0.1):
     is_high = e.height > tolerance
     is_wide = e.width > tolerance
     # if skewed towards a line
-    if is_wide and not is_high: 
+    if is_wide and not is_high:
         return (e.width,0.)
     if is_high and not is_wide:
         return (0.,e.height)
-    
+
 def aligned(e1,e2):
     '''
-    alignment is determined by two boxes having one exactly the same 
+    alignment is determined by two boxes having one exactly the same
     attribute, which could mean parallel, perpendicularly forming a
     corner etc.
     '''
-    return (any(close(c1,c2) for c1,c2 in izip(e1.bbox,e2.bbox)) or 
+    return (any(close(c1,c2) for c1,c2 in zip(e1.bbox,e2.bbox)) or
             x_center_aligned(e1, e2) or
             y_center_aligned(e1, e2))
 
@@ -74,11 +74,11 @@ def area(bbox):
     return (bbox[x1]-bbox[x0])*(bbox[y1]-bbox[y0])
 
 def l1(c1,c2):
-    return sum(abs(v1-v2) for v1, v2 in izip(c1,c2)) 
+    return sum(abs(v1-v2) for v1, v2 in zip(c1,c2))
 
 def segment_diff(s1,s2):
     '''
-    Returns the sum of absolute difference between 
+    Returns the sum of absolute difference between
     two segments' end points.
     Only perfectly aligned segments return 0
     '''
@@ -114,7 +114,7 @@ def intersect(a,b):
 def inside(outer,inner):
     return inner[x0] >= outer[x0] and inner[x1] <= outer[x1] \
         and inner[y0] >= outer[y0] and inner[y0] <= outer[y1]
-        
+
 _stretch_dir = np.array([-1,-1,1,1])
 def enlarge(bbox, delta):
     return np.array(bbox) + delta * _stretch_dir
@@ -138,12 +138,12 @@ def merge_intervals(elems, overlap_thres = 2.0):
     Project in x axis
     Sort by start
     Go through segments and keep max x1
-    
+
     Return a list of non-overlapping intervals
     '''
     overlap_thres = max(0.0, overlap_thres)
     ordered = sorted(elems, key=lambda e:e.x0)
-    
+
     intervals = []
     cur = [-overlap_thres,-overlap_thres]
     for e in ordered:
@@ -155,5 +155,5 @@ def merge_intervals(elems, overlap_thres = 2.0):
             continue
         cur[1] = max(cur[1],e.x1)
     intervals.append(cur)
-    # Freeze the interval to tuples    
+    # Freeze the interval to tuples
     return map(tuple,intervals)

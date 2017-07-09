@@ -111,7 +111,7 @@ if __name__ == '__main__':
     recall = []
     precision = []
     for i, pdf_file in enumerate(pdf_files):
-        print "{} documents processed out of {}".format(i, len(pdf_files))
+        print("{} documents processed out of {}".format(i, len(pdf_files)))
         extracted_bbox = get_bboxes_from_line(extracted_bbox_line[i])
         gt_bbox = get_bboxes_from_line(gt_bbox_line[i])
         for page_num, layout in enumerate(analyze_pages(os.environ['DATAPATH'] + pdf_file)):
@@ -125,11 +125,11 @@ if __name__ == '__main__':
                 precision.append(compute_sub_objects_precision(extracted_chars, gt_chars))
             elif len(extracted_chars) == 0 and len(gt_chars) > 0:
                 # There is a table that wasn't identified
-                print "Table was not found in page {} of doc {}".format(page_num, pdf_file)
+                print("Table was not found in page {} of doc {}".format(page_num, pdf_file))
                 recall.append(0.0)
             elif len(gt_chars) == 0 and len(extracted_chars) > 0:
                 # There is no table but the method found a false positive
-                print "Table was found in page {} of doc {} - error".format(page_num, pdf_file)
+                print("Table was found in page {} of doc {} - error".format(page_num, pdf_file))
                 precision.append(0.0)
             else:
                 # both are 0, no table in the current page
@@ -139,6 +139,6 @@ if __name__ == '__main__':
                 display_results(os.environ['DATAPATH'] + pdf_file, page_num, gt_bbox, color=Color('red'))
     r = np.mean(recall) * 100
     p = np.mean(precision) * 100
-    print "Per-page average Recall : {}%".format(r)
-    print "Per-page average Precision : {}%".format(p)
-    print "F1-measure : {}".format(2 * r * p / (r + p))
+    print("Per-page average Recall : {}%".format(r))
+    print("Per-page average Precision : {}%".format(p))
+    print("F1-measure : {}".format(2 * r * p / (r + p)))

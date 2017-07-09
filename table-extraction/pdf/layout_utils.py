@@ -3,7 +3,7 @@ Created on Jan 25, 2016
 
 @author: xiao
 '''
-from vector_utils import *
+from .vector_utils import *
 import collections
 from pdfminer.layout import LTTextLine, LTChar, LTAnno, LTCurve, LTComponent, LTLine
 from itertools import chain
@@ -32,12 +32,12 @@ def get_near_items(tree,tree_key):
     try:
         yield tree.ceiling_item(tree_key)
     except KeyError:
-        pass            
-            
+        pass
+
 def align_add(tree, key, item, align_thres = 2.0):
     '''
-    Adding the item object to a binary tree with the given 
-    key while allow for small key differences 
+    Adding the item object to a binary tree with the given
+    key while allow for small key differences
     close_enough_func that checks if two keys are
     within threshold
     '''
@@ -47,8 +47,8 @@ def align_add(tree, key, item, align_thres = 2.0):
             return
     # Create a new group if no items are close
     tree[key] = [item]
-    
-    
+
+
 right_wall = lambda m: (m.x1,m.y0,m.x1,m.y1)
 left_wall = lambda m: (m.x0,m.y0,m.x0,m.y1)
 top_wall = lambda m: (m.x0,m.y0,m.x1,m.y0)
@@ -58,7 +58,7 @@ def vlines_between(plane, prev, m):
     if prev.xc > m.xc: prev, m = m, prev
     query = (prev.xc, prev.yc, m.xc, prev.yc)
     return [l for l in plane.find(query) if l.x1 - l.x0 < 0.1]
-    
+
 def hlines_between(plane, prev, m):
     if not prev or not m: return []
     if prev.yc > m.yc: prev, m = m, prev
@@ -79,11 +79,11 @@ def is_vline(l):
 
 def is_hline(l):
     return l.y1 - l.y0 < 0.1
-#  
+#
 # def align_add_to_tree(tree, key, item, close_enough_func):
 #     '''
-#     Adding the item object to a binary tree with the given 
-#     key while allow for small key differences 
+#     Adding the item object to a binary tree with the given
+#     key while allow for small key differences
 #     close_enough_func that checks if two keys are
 #     within threshold
 #     '''
@@ -93,11 +93,11 @@ def is_hline(l):
 #             near_list.append(item)
 #             has_neighbor = True
 #             break
-#  
+#
 #     # Create a new group if no items are close
 #     if not has_neighbor:
 #         tree[key] = [item]
-#  
+#
 
 def collect_table_content(table_bboxes,elems):
     '''
@@ -130,7 +130,7 @@ def collect_table_content(table_bboxes,elems):
                 prev_content.append(c)
                 break
     return table_contents
-    
+
 _bbox = namedtuple('_bbox', ['bbox'])
 _inf_bbox = _bbox([float('inf')] * 4)
 
@@ -146,9 +146,9 @@ def _gaps_from(intervals):
 
 def project_onto(objs, axis, min_gap_size = 4.0):
     '''
-    Projects object bboxes onto the axis and return the 
+    Projects object bboxes onto the axis and return the
     unioned intervals and groups of objects in intervals.
-    '''   
+    '''
     if axis == 'x': axis = 0
     if axis == 'y': axis = 1
     axis_end = axis + 2
@@ -156,49 +156,49 @@ def project_onto(objs, axis, min_gap_size = 4.0):
         objs.sort(key = lambda o:o.x0)
     else:
         objs.sort(key = lambda o:o.y0)
-    
+
     intervals = []
     groups = []
-    
+
     start_i = 0
     start = objs[0].bbox[axis]
     end = objs[0].bbox[axis_end]
-    
+
     # Use _inf_bbox to trigger the last interval divide
     for o_i, o in enumerate(chain(objs,[_inf_bbox])):
 
         # Get current interval
         o_start = o.bbox[axis]
         o_end = o.bbox[axis_end]
-        
+
         # start new interval when gap with previous end is big
         if o_start > end + min_gap_size:
-            
+
             # Append new interval coordinates for children
             intervals.append((start, end))
-            
+
             # Append child object group on page
             groups.append(objs[start_i:o_i])
-            
+
             # Mark next obj list range
             start_i = o_i
             start = o_start
-       
+
         # Always check to extend current interval to new end
         if o_end > end:
             end = o_end
         # else do nothing
-    return intervals, groups 
+    return intervals, groups
 
 def recursive_xy_divide(elems, avg_font_size):
     '''
-    Recursively group/divide the document by white stripes 
+    Recursively group/divide the document by white stripes
     by projecting elements onto alternating axes as intervals.
-    
+
     avg_font_size: the minimum gap size between elements below
     which we consider interval continuous.
     '''
-    print avg_font_size
+    print(avg_font_size)
     objects = list(elems.mentions)
     objects.extend(elems.segments)
     bboxes = []
@@ -213,15 +213,15 @@ def recursive_xy_divide(elems, avg_font_size):
         we split along x axis.
         '''
         if not objs: return []
-        
+
         # range start/end indices
         axis = 1 if h_split else 0
 
         intervals, groups = project_onto(objs, axis, avg_font_size)
-        
+
         # base case where we can not actually divide
-        single_child = len(groups) == 1 
-        
+        single_child = len(groups) == 1
+
         # Can not divide in both X and Y, stop
         if is_single and single_child:
             bboxes.append(bbox)
@@ -238,11 +238,10 @@ def recursive_xy_divide(elems, avg_font_size):
                 child = divide(group, sub_bbox, not h_split, single_child)
                 children.append(child)
             return children
-                
+
     full_page_bbox = (0, 0, elems.layout.width, elems.layout.height)
     # Filter out invalid objects
     objects = [o for o in objects if inside(full_page_bbox,o.bbox)]
-    print 'avg_font_size for dividing',avg_font_size
+    print('avg_font_size for dividing',avg_font_size)
     tree = divide(objects, full_page_bbox) if objects else []
     return bboxes, tree
-     

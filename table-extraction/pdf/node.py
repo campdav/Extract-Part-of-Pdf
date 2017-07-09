@@ -43,7 +43,7 @@ class Node(LTComponent):
         self.set_bbox(bound_elems(elems))
         self.table_indicator = True
         self.type_counts = Counter(map(elem_type, elems))
-        self.feat_counts = Counter(kv for e in elems for kv in e.feats.iteritems())
+        self.feat_counts = Counter(kv for e in elems for kv in e.feats.items())
 
     def merge(self, other):
         self.elems.extend(other.elems)
@@ -81,13 +81,13 @@ class Node(LTComponent):
         # # print ws_arr
         # if(len(ws_arr)>0):
         #     count_arr = max([ws_arr.count(i) for i in ws_arr])
-        #     if(float(count_arr)/len(ws_arr) > 0.75):    
+        #     if(float(count_arr)/len(ws_arr) > 0.75):
         #         return True
         if ((self.sum_elem_bbox / (self.height * self.width)) > self.table_area_threshold):
             return False
         has_many_x_align = False
         has_many_y_align = False
-        for k, v in self.feat_counts.iteritems():
+        for k, v in self.feat_counts.items():
             font_key = k[0]
             if v >= 2 and '-' in font_key:  # Text row or column with more than 2 elements
                 if font_key[-2] == 'x': has_many_x_align = True
@@ -204,7 +204,7 @@ def _get_rows(mentions):
             curr_row = []
         curr_row.append(m)
         prev = m
-    # Finish up last row            
+    # Finish up last row
     if curr_row: rows.append(curr_row)
     return rows
 

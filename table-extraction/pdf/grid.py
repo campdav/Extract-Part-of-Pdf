@@ -22,7 +22,7 @@ class Cell(object):
         self.rowend = self.rowstart + rowspan
         self.colend = self.colstart + colspan
         self.texts = texts
-        
+
     def __str__(self, *args, **kwargs):
         return ','.join([m.get_text().encode('utf8') for m in self.texts])
 
@@ -39,22 +39,22 @@ class Grid(object):
 
         self.xs = [v.xc for v in vlines]
         self.ys = [h.yc for h in hlines]
-        
+
         # Remove closely clustered lines
         # Also make sure there is at least 1 mega column for the table
         self.xs = _retain_centroids(self.xs + [region.x0, region.x1], min_cell_size)
         self.ys = _retain_centroids(self.ys + [region.y0, region.y1], min_cell_size)
-        
+
         self.xranges = zip(self.xs, self.xs[1:])
         self.yranges = zip(self.ys, self.ys[1:])
-        
+
         self.num_cols = len(self.xranges)
         self.num_rows = len(self.yranges)
-        
+
         # Grid contents
         self._grid = np.full([self.num_rows, self.num_cols], None, dtype=np.dtype(object))
         grid = self._grid
-        
+
         # Record whether a particular cell boundary is present
         line_plane = Plane(region.bbox)
         line_plane.extend(lines)
@@ -76,11 +76,11 @@ class Grid(object):
                 else:
                     grid[i, j] = cell = Cell([i, j])
                     cells.append(cell)
-                
-        # Now get the cell's contents by using its boundary        
+
+        # Now get the cell's contents by using its boundary
         text_plane = Plane(region.bbox)
         text_plane.extend(mentions)
-        
+
         for cell in cells:
             x0 = self.xs[cell.colstart]
             x1 = self.xs[cell.colend]
@@ -90,16 +90,16 @@ class Grid(object):
             # Keep mentions whose centers are inside the cell
             cell.texts = [m for m in text_plane.find(bbox) if inside(bbox, (m.xc, m.yc) * 2)]
 #             print (cell.rowstart, cell.colstart, cell.rowend, cell.colend), cell
-                        
+
 # TODO: provide HTML conversion here
 #         df = pd.DataFrame(grid)
 #         print df.to_string(index=False, header=False)
-        
+
         self.get_normalized_grid()
-        
+
     def to_dataframe(self):
         return pd.DataFrame(self._grid)
-    
+
     def to_html(self):
         return self.to_dataframe().to_html(index=False, header=False)
 
@@ -119,23 +119,23 @@ class Grid(object):
 #                intervals, groups = project_onto(cell.texts, axis='x', self.min_cell_size)
                 prev = None
                 if debug_print:
-                    print '='*50
+                    print('='*50)
                 for m in cell.texts:
 #                     print m.yc_grid, m.clean_text
                     subrow_across_cell[m.yc_grid].append(m)
                     prev = m
-            
+
             if debug_print:
                 pprint(dict(subrow_across_cell))
-            
+
             mega_rows.append(subrow_across_cell)
-            
+
             #pprint(dict(subrow_across_cell), indent=1)
         # Multilnie paragraph check
         # Subrow/Subcolumn
-        
+
         return mega_rows
-        
+
     def _mark_grid_bounds(self, plane, region_bbox):
         '''
         Assume all lines define a complete grid over the region_bbox.
@@ -145,12 +145,12 @@ class Grid(object):
         # Grid boundaries
         vbars = np.zeros([self.num_rows, self.num_cols + 1], dtype=np.bool)
         hbars = np.zeros([self.num_rows + 1, self.num_cols], dtype=np.bool)
-        
+
         def closest_idx(arr, elem):
             left = bisect.bisect_left(arr, elem) - 1
             right = bisect.bisect_right(arr, elem) - 1
             return left if abs(arr[left] - elem) < abs(arr[right] - elem) else right
-         
+
         # Figure out which separating segments are missing, i.e. merge cells
         for row, (y0, y1) in enumerate(self.yranges):
             yc = (y0 + y1) / 2
@@ -165,7 +165,7 @@ class Grid(object):
 ############################
 # Utilities
 ############################
-        
+
 def _retain_centroids(numbers, thres):
     '''Only keep one number for each cluster within thres of each other'''
     numbers.sort()
@@ -176,7 +176,7 @@ def _retain_centroids(numbers, thres):
             ret.append(n)
             prev = n
     return ret
-            
+
 def _split_vlines_hlines(lines):
     '''Separates lines into horizontal and vertical ones'''
     vlines, hlines = [], []
@@ -189,5 +189,4 @@ def _npiter(arr):
     for a in np.nditer(arr, flags=['refs_ok']):
         c = a.item()
         if c is not None:
-            yield c        
-        
+            yield c

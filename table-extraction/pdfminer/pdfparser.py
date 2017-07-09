@@ -1,16 +1,18 @@
-#!/usr/bin/env python
-import sys
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-from psparser import PSStackParser
-from psparser import PSSyntaxError, PSEOF
-from psparser import KWD, STRICT
-from pdftypes import PDFException
-from pdftypes import PDFStream, PDFObjRef
-from pdftypes import int_value
-from pdftypes import dict_value
+
+import logging
+from io import BytesIO
+from .psparser import PSStackParser
+from .psparser import PSSyntaxError
+from .psparser import PSEOF
+from .psparser import KWD
+from . import settings
+from .pdftypes import PDFException
+from .pdftypes import PDFStream
+from .pdftypes import PDFObjRef
+from .pdftypes import int_value
+from .pdftypes import dict_value
+
+log = logging.getLogger(__name__)
 
 
 ##  Exceptions
@@ -50,12 +52,12 @@ class PDFParser(PSStackParser):
         self.doc = doc
         return
 
-    KEYWORD_R = KWD('R')
-    KEYWORD_NULL = KWD('null')
-    KEYWORD_ENDOBJ = KWD('endobj')
-    KEYWORD_STREAM = KWD('stream')
-    KEYWORD_XREF = KWD('xref')
-    KEYWORD_STARTXREF = KWD('startxref')
+    KEYWORD_R = KWD(b'R')
+    KEYWORD_NULL = KWD(b'null')
+    KEYWORD_ENDOBJ = KWD(b'endobj')
+    KEYWORD_STREAM = KWD(b'stream')
+    KEYWORD_XREF = KWD(b'xref')
+    KEYWORD_STARTXREF = KWD(b'startxref')
 
     def do_keyword(self, pos, token):
         """Handles PDF-related keywords."""
@@ -89,13 +91,13 @@ class PDFParser(PSStackParser):
                 try:
                     objlen = int_value(dic['Length'])
                 except KeyError:
-                    if STRICT:
+                    if settings.STRICT:
                         raise PDFSyntaxError('/Length is undefined: %r' % dic)
             self.seek(pos)
             try:
                 (_, line) = self.nextline()  # 'stream'
             except PSEOF:
-                if STRICT:
+                if settings.STRICT:
                     raise PDFSyntaxError('Unexpected EOF')
                 return
             pos += len(line)
@@ -106,21 +108,21 @@ class PDFParser(PSStackParser):
                 try:
                     (linepos, line) = self.nextline()
                 except PSEOF:
-                    if STRICT:
+                    if settings.STRICT:
                         raise PDFSyntaxError('Unexpected EOF')
                     break
-                if 'endstream' in line:
-                    i = line.index('endstream')
+                if b'endstream' in line:
+                    i = line.index(b'endstream')
                     objlen += i
-                    data += line[:i]
+                    if self.fallback:
+                        data += line[:i]
                     break
                 objlen += len(line)
-                data += line
+                if self.fallback:
+                    data += line
             self.seek(pos+objlen)
             # XXX limit objlen not to exceed object boundary
-            if 2 <= self.debug:
-                print >>sys.stderr, 'Stream: pos=%d, objlen=%d, dic=%r, data=%r...' % \
-                                    (pos, objlen, dic, data[:10])
+            log.debug('Stream: pos=%d, objlen=%d, dic=%r, data=%r...', pos, objlen, dic, data[:10])
             obj = PDFStream(dic, data, self.doc.decipher)
             self.push((pos, obj))
 
@@ -144,13 +146,14 @@ class PDFStreamParser(PDFParser):
     """
 
     def __init__(self, data):
-        PDFParser.__init__(self, StringIO(data))
+        PDFParser.__init__(self, BytesIO(data))
         return
 
     def flush(self):
         self.add_results(*self.popall())
         return
 
+    KEYWORD_OBJ = KWD(b'obj')
     def do_keyword(self, pos, token):
         if token is self.KEYWORD_R:
             # reference to indirect object
@@ -161,6 +164,12 @@ class PDFStreamParser(PDFParser):
                 self.push((pos, obj))
             except PSSyntaxError:
                 pass
+            return
+        elif token in (self.KEYWORD_OBJ, self.KEYWORD_ENDOBJ):
+            if settings.STRICT:
+                # See PDF Spec 3.4.6: Only the object values are stored in the
+                # stream; the obj and endobj keywords are not used.
+                raise PDFSyntaxError('Keyword endobj found in stream')
             return
         # others
         self.push((pos, token))

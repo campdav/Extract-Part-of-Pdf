@@ -18,7 +18,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.utils import apply_matrix_pt
-from layout_utils import *
+from .layout_utils import *
 from pdfminer.pdfdocument import PDFDocument
 
 # Compact wrapper representation for the pdf
@@ -27,9 +27,9 @@ PDFElems = namedtuple('PDFElems', ['mentions', 'segments', 'curves', 'figures', 
 
 class CustomPDFPageAggregator(PDFPageAggregator):
     '''
-    A custom version of the default pdf miner stateful draw call 
+    A custom version of the default pdf miner stateful draw call
     interpreter. Handles the creation of python object from pdf draw
-    calls. 
+    calls.
     Changes the way LTCurves are created - break up large polylines
     and rectangles into standard segments.
     '''
@@ -42,7 +42,7 @@ class CustomPDFPageAggregator(PDFPageAggregator):
         '''
         shape = ''.join(x[0] for x in path)
         prev_split = 0
-        for i in xrange(len(shape)):
+        for i in range(len(shape)):
             if shape[i] == 'm' and prev_split != i:
                 self.paint_single_path(gstate, stroke, fill, evenodd, path[prev_split:i])
                 prev_split = i
@@ -64,19 +64,19 @@ class CustomPDFPageAggregator(PDFPageAggregator):
 
         pts = []
         for p in path:
-            for i in xrange(1, len(p), 2):
+            for i in range(1, len(p), 2):
                 pts.append(apply_matrix_pt(self.ctm, (p[i], p[i + 1])))
 
         # Line mode
         if self.line_only_shape.match(shape):
             # check for sloped lines first
             has_slope = False
-            for i in xrange(len(pts) - 1):
+            for i in range(len(pts) - 1):
                 if pts[i][0] != pts[i + 1][0] and pts[i][1] != pts[i + 1][1]:
                     has_slope = True
                     break
             if not has_slope:
-                for i in xrange(len(pts) - 1):
+                for i in range(len(pts) - 1):
                     self.cur_item.add(LTLine(gstate.linewidth, pts[i], pts[i + 1]))
 
                 # Adding the closing line for a polygon, especially rectangles
@@ -113,7 +113,7 @@ def analyze_pages(file_name, char_margin=1.0):
             try:
                 interpreter.process_page(page)
             except OverflowError as oe:
-                print oe, ', skipping page', page_num, 'of', file_name
+                print(oe, ', skipping page', page_num, 'of', file_name)
                 traceback.print_exc()
                 continue
             layout = device.get_result()
@@ -122,7 +122,7 @@ def analyze_pages(file_name, char_margin=1.0):
 
 def normalize_pdf(layout, scaler):
     '''
-    Normalizes pdf object coordinates (bot left) to image 
+    Normalizes pdf object coordinates (bot left) to image
     conventions (top left origin).
     Returns the list of chars and average char size
     '''
@@ -137,7 +137,7 @@ def normalize_pdf(layout, scaler):
     figures = []
 
     def processor(m):
-        # Normalizes the coordinate system to be consistent with 
+        # Normalizes the coordinate system to be consistent with
         # image library conventions (top left as origin)
         if isinstance(m, LTComponent):
             m.set_bbox(normalize_bbox(m.bbox, height, scaler))
@@ -168,14 +168,14 @@ def normalize_pdf(layout, scaler):
                 mention_text = keep_allowed_chars(m.get_text()).strip()
                 # Skip empty and invalid lines
                 if mention_text:
-                    # TODO: add subscript detection and use latex underscore 
+                    # TODO: add subscript detection and use latex underscore
                     # or superscript
                     m.clean_text = mention_text
                     m.font_name, m.font_size = _font_of_mention(m)
                     mentions.append(m)
                 return
 
-        # Also include non character annotations            
+        # Also include non character annotations
         if isinstance(m, LTAnno):
             chars.append(m)
 
@@ -201,9 +201,9 @@ def _print_dict(elem_dict):
     '''
     for key, value in sorted(elem_dict.iteritems()):
         if isinstance(value, collections.Iterable):
-            print key, len(value)
+            print(key, len(value))
         else:
-            print key, value
+            print(key, value)
 
 
 def _font_size_of(ch):

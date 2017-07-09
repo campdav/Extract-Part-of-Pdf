@@ -1,22 +1,74 @@
+# Extract Part of pdf
+
+This project is a fork from [HazyReasearch/TreeStructure project](https://github.com/HazyResearch/TreeStructure)
+
+
+## Modification:
+- convert to **python 3.x**
+- **PoPDF2Img.py** extract tagged boxes from pdfs.
+
+## PoPDF2Img.py - extract part of pdf as images
+### usage:
+python PoPDF2Img.py
+    --pdf ./data/paleo/documents/
+    --pdflist ./data/paleo/ml/file
+    --boxes ./data/paleo/ml/file.bbox
+    --margin 0.15 (optional)
+    --quality 200 (optional)
+    --output ./data/output (optional)
+    --temp ./data/temp (optional)
+
+it will save images of boxes from the list of pdf.
+
+images will be named:
+ - **pdfname**-**uuid-number**_pn-**number**_pw-**number**_ph-**number**_t-**number**_l-**number**_b-**number**_r-**number**.jpg
+
+where:
+ - **pn**: the page number of the box
+ - **pw**: the width of the page
+ - **ph**: the height of the page
+ - **t**: the top pixel of the box
+ - **l**: the left pixel of the box
+ - **b**: the bottom pixel of the box
+ - **r**: the right pixel of the box
+
+the bbox file is following of the one generated using the **table-extraction/ml/extract_tables.py** python file.
+
+### Pre-requisites:
+  - [ImageMagick](http://www.imagemagick.org/script/index.php) to Convert the PDF file
+  - $ sudo apt-get install libmagickwand-dev
+  - $ pip install Wand
+
+  - Pillow:
+    - $ pip install Pillow
+    - [More Installation](http://sorry-wand.readthedocs.org/en/latest/guide/install.html)
+    - [More about wand](https://pypi.python.org/pypi/Wand)
+
+
+
+
+
+**Below is the original readme for Tree Structure:**
+
 # Tree Structure - Table Extraction
 
-Fonduer has been successfully extended to perform information extraction from richly formatted data such as tables. A crucial step in this process is the construction of the hierarchical tree of context objects such as text blocks, figures, tables, etc. The system currently uses PDF to HTML conversion provided by Adobe Acrobat converter. Adobe Acrobat converter is not an open source tool and this can be very inconvenient for Fonduer users. We therefore need to build our own module as replacement to Adobe Acrobat. Several open source tools are available for pdf to html conversion but these tools do not preserve the cell structure in a table. Our goal in this project is to develop a tool that extracts text, figures and tables in a pdf document and maintains the structure of the document using a tree data structure. 
+Fonduer has been successfully extended to perform information extraction from richly formatted data such as tables. A crucial step in this process is the construction of the hierarchical tree of context objects such as text blocks, figures, tables, etc. The system currently uses PDF to HTML conversion provided by Adobe Acrobat converter. Adobe Acrobat converter is not an open source tool and this can be very inconvenient for Fonduer users. We therefore need to build our own module as replacement to Adobe Acrobat. Several open source tools are available for pdf to html conversion but these tools do not preserve the cell structure in a table. Our goal in this project is to develop a tool that extracts text, figures and tables in a pdf document and maintains the structure of the document using a tree data structure.
 
-This project is using the table-extraction tool (https://github.com/xiao-cheng/table-extraction). 
+This project is using the table-extraction tool (https://github.com/xiao-cheng/table-extraction).
 
-## Dependencies 
+## Dependencies
 
-```pip install -r requirements.txt```
+pip install -r requirements.txt
 
-## Environment variables 
+## Environment variables
 
-First, set environment variables. The ```DATAPATH``` folder should contain the pdf files that need to be processed. 
+First, set environment variables. The **DATAPATH** folder should contain the pdf files that need to be processed.
 
-```source set_env.sh```
+source set_env.sh
 
 ## Tutorial
- 
-The ```table-extraction/tutorials/``` folder contains a notebook ```table-extraction-demo.ipynb```. In this demo we detail the different steps of the table extraction tool and display some examples of table detection results for paleo papers. However, to extract tables for new documents, the user should directly use the command line tool detailed in the next section. 
+
+The **table-extraction/tutorials/** folder contains a notebook **table-extraction-demo.ipynb**. In this demo we detail the different steps of the table extraction tool and display some examples of table detection results for paleo papers. However, to extract tables for new documents, the user should directly use the command line tool detailed in the next section.
 
 ## Command Line Usage
 
@@ -59,17 +111,17 @@ optional arguments:
                         intersection over union threshold to remove duplicate
                         tables
 ```
-                        
-                        
-Each document must be saved in the ```DATAPATH``` folder. 
+
+
+Each document must be saved in the ```DATAPATH``` folder.
 
 The script will create a ``` .bbox``` file where each row contains tables coordinates of the corresponding row document in the --test_pdf file.
 
-The bounding boxes are stored in the format (page_num, page_width, page_height, top, left, bottom, right) and are separated with ";". 
+The bounding boxes are stored in the format (page_num, page_width, page_height, top, left, bottom, right) and are separated with ";".
 
 ## Evaluation
 
-We provide an evaluation code to compute recall, precision and F1 score at the character level. 
+We provide an evaluation code to compute recall, precision and F1 score at the character level.
 
 ```python table-extraction/evaluation/char_level_evaluation.py [-h] pdf_files extracted_bbox gt_bbox```
 

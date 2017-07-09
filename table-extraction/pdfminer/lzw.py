@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-import sys
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
+from io import BytesIO
+
+import six  #Python 2+3 compatibility
+
+import logging
 
 class CorruptDataError(Exception):
     pass
@@ -13,8 +12,6 @@ class CorruptDataError(Exception):
 ##  LZWDecoder
 ##
 class LZWDecoder(object):
-
-    debug = 0
 
     def __init__(self, fp):
         self.fp = fp
@@ -51,12 +48,12 @@ class LZWDecoder(object):
         return v
 
     def feed(self, code):
-        x = ''
+        x = b''
         if code == 256:
-            self.table = [chr(c) for c in xrange(256)]  # 0-255
+            self.table = [six.int2byte(c) for c in range(256)]  # 0-255
             self.table.append(None)  # 256
             self.table.append(None)  # 257
-            self.prevbuf = ''
+            self.prevbuf = b''
             self.nbits = 9
         elif code == 257:
             pass
@@ -93,21 +90,13 @@ class LZWDecoder(object):
                 # just ignore corrupt data and stop yielding there
                 break
             yield x
-            if self.debug:
-                print >>sys.stderr, ('nbits=%d, code=%d, output=%r, table=%r' %
-                                     (self.nbits, code, x, self.table[258:]))
+            logging.debug('nbits=%d, code=%d, output=%r, table=%r' %
+                          (self.nbits, code, x, self.table[258:]))
         return
 
 
 # lzwdecode
 def lzwdecode(data):
-    """
-    >>> lzwdecode('\x80\x0b\x60\x50\x22\x0c\x0c\x85\x01')
-    '\x2d\x2d\x2d\x2d\x2d\x41\x2d\x2d\x2d\x42'
-    """
-    fp = StringIO(data)
-    return ''.join(LZWDecoder(fp).run())
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
+    fp = BytesIO(data)
+    s=LZWDecoder(fp).run()
+    return b''.join(s)
